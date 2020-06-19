@@ -9,3 +9,61 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+# Overall Science Question
+Question:
+
+## Sub Hypotheses:
+H1:
+H2:
+H3:
+
+
+# Loading Packages
+
+```{r Load-Packages }
+
+```
+ 
+ 
+# Functions
+ 
+```{r Functions}
+# Here is where we will write out functions we need
+
+# Possibly a function to pull out data across FT-boundary
+
+# Possibly a function to pull out sites that have snow fall/cover data
+ 
+```
+
+# Load Data
+
+```{r Load-data}
+#This is where we would load the data we are going to analyze
+
+```
+
+# Clean Data
+
+```{r Clean-Data }
+
+```
+
+# Hypothesis 1
+
+```{r H-1}
+
+```
+
+# Hypothesis 2
+
+```{r H-2}
+
+```
+
+# Hypothesis 3
+
+```{r H-3}
+
+```
