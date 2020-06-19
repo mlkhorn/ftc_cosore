@@ -1,6 +1,6 @@
-# rPractice
-###### 06/11/2020
-###### Mercedes Horn
+# rpennpractice
+# 06/11/2020
+# Mercedes Horn
 
 
 
@@ -15,62 +15,36 @@ library(tidyr)
 
 ### Question 1
 
-###### checking out the dataset
-gapminder 
-
-###### work
+# work
 range(gapminder[3])
 
-####### answer
-#### 1952 to 2007, ie 55 years
+# answer
+#### 1952 to 2007, ie 56 years
  
 
 
 ### Question 2
 
-### checking out what this does
-gapminder %>%  
-  print(n = 20) %>%  
-  summary()
-
-###### work
-gapminder[1:20,] 
-
-###### answer
-print(gapminder[1:20,])
+# answer
+print(gapminder,n=20)
 summary(gapminder)
 
 
 
 ### Question 3  
 
-###### work
-n_distinct(gapminder$continent)
-
-###### answer
+# answer
 gapminder %>%
      filter(year == 2007) %>%
      group_by(continent) %>%
-     summarise(lecMean=mean(lifeExp)) %>% 
+     summarise(lecMean=weighted.mean(lifeExp,pop)) %>% 
      print()
-
-```
-# A tibble: 5 x 2
-continent lecMean
-<fct>       <dbl>
-  1 Africa       54.8
-2 Americas     73.6
-3 Asia         70.7
-4 Europe       77.6
-5 Oceania      80.7
-
-```
 
 
 
 ### Question 4
 
-###### answer
+# answer
 gapminder %>%
   filter(country == "China") %>% 
   select(year, lifeExp) %>%
@@ -85,11 +59,8 @@ gapminder %>%
 
 ### Question 5
 
-###### answer
-gapminder %>%    # looking wrong
-  group_by(country) %>%
-  summarise(maxpop=max(pop), witchy=which())
-gapminder %>%    # looking wrong
+# answer
+gapminder %>%    
   group_by(country) %>%
   summarise(maxpopyear=year[which(pop == max(pop))])
 
@@ -97,7 +68,7 @@ gapminder %>%    # looking wrong
 
 ### Question 6
 
-###### answer
+# answer
 gapminder %>%
   filter(year == 1967) %>%
   ggplot(aes(x=gdpPercap, y=lifeExp, colour=continent)) +
@@ -112,10 +83,10 @@ gapminder %>%
 
 ### Question 7 
 
-###### work
+# work
 library(babynames)
 
-###### answer 1
+# answer 1
 babynames %>%
 filter(name == "Alex") %>% 
 ggplot(aes(year, prop)) +
@@ -125,7 +96,7 @@ ggplot(aes(year, prop)) +
   ggtitle("Use Of The Name Alex Over Time")+
   facet_wrap(~ sex)
 
-###### answer 2
+# answer 2
 gapminder %>%
   filter(continent == "Europe") %>%
   ggplot(aes(year,pop)) +
