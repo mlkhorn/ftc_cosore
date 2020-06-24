@@ -22,7 +22,13 @@ H3:
 # Loading Packages
 
 ```{r Load-Packages }
-
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(devtools)
+library(remotes)
+library(cosore)
 ```
  
  
@@ -32,6 +38,8 @@ H3:
 # Here is where we will write out functions we need
 
 # Possibly a function to pull out data across FT-boundary
+
+
 
 # Possibly a function to pull out sites that have snow fall/cover data
  

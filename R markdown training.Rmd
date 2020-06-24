@@ -1,0 +1,126 @@
+---
+title: "Rmarkdown Training"
+author: "Mercedes Horn"
+date: "6/17/2020"
+output:
+  html_document: default
+  word_document: default
+---
+
+The sun rose 6 times today.
+
+The sun rose `r 2*3` times today. `2*3=6`
+
+I woke up in a _very_ bad mood today, I am gonna use _italics_.
+
+I want this to be **bold**.
+
+My breakfast:
+
+* Cheerios
+
+* Blueberries
+
+* Staples
+
+`I want this sentence to be in code format`
+
+
+`All the sentences below end up in the same paragraph`
+
+One sentence.
+Second sentence.
+Third. 
+
+`All the sentences below end up in different paragraphs`
+
+One sentence.
+
+Second sentence.
+
+Third. 
+
+
+**Inline code gets hard to read quickly**
+
+
+**What is much more powerful is inserting code chunks**
+
+
+
+Below is a code chunk:
+_code chunks can print more than one output_
+_echo=FALSE is a code option runs the code hides it from view, only showing the output_
+
+
+# My summary of cars
+
+The `cars` dataset has `r nrow(cars)` observations. Here is a summary of cars and a plot of some cars data.
+
+```{r, myfirstcodechunk}
+print(summary(cars))
+plot(cars$speed,cars$dist)
+m<-lm(dist ~ speed, data = cars)
+print(m)
+```
+
+
+# Take aways
+* We have inline code
+* Code chunks, code chunks can be as long as we want them to be
+* echo=FALSE code is not shown
+
+
+
+# Iris
+* echo= FALSE code is not shown but results are
+* eval= FALSE you can see the code but it doesn't execute
+* message= FALSE any code that is generated is not shown
+* include= FALSE doesn't show you code or results
+* cache=FALSE whether to cache your results, for expensive ( expensive ie takes a lot of time to run) things with many lines of code you don't what to rerun every time so you
+
+
+```{r iris, echo=FALSE, message=FALSE}
+library(dplyr)
+
+```
+
+
+# Graphics
+* would include after fig.align to format your document
+* whole universe of ways to make snazzy tables in Rmarkdown
+```{r table}
+knitr::kable(head(cars), align = "l", caption="My cars table")
+
+```
+
+
+# Pandoc
+* pandoc is a soft ware that is running the under the hood here as well
+* you can use this to generate a word doc
+
+
+# Working directories in R markdown
+* problem of working directories in R
+* don't use absolute directories because it will then go and break
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# How to write comments in Markdown that don't appear in your final R-markdown document 
+
+[//]: comment here
+
+
+# Cool things you can do with R 
+* with a single line of code, you can make a graph interactive
+* _use the plotly package_
+* You can make interactive tables
+* package called DT
+* super easy to put in interactive maps
+* ben used R markdown to generate slides
+* you can use leaflet to insert interactive maps into slide decks and into documents
+* link to this code in the slides 
+* citation magemment
