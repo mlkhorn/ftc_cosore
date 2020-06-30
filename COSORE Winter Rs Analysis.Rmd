@@ -22,9 +22,16 @@ H3:
 # Loading Packages
 
 ```{r Load-Packages }
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(lubridate)
+library(devtools)
+library(remotes)
+library(cosore)
 
+source("FTFindUsefulData.R")
 ```
- 
  
 # Functions
  
@@ -39,8 +46,26 @@ H3:
 
 # Load Data
 
+winterdata_names holds the names of the 8 datasets that have a full year of data and have a winter period that matches our definition. 
+
+winterdata holds the data tables of all the datasets in winter_datanames
+
+winterdata_full holds all the data of all the datasets in winterdata_names
+
 ```{r Load-data}
 #This is where we would load the data we are going to analyze
+
+winterdata_names
+
+winterdata <- list()
+for (i in 1:length(winterdata_names)) {
+  winterdata[[i]]<- csr_dataset(winterdata_names[i])$data
+}
+
+winterdata_full <- list()
+for (i in 1:length(winterdata_names)) {
+  winterdata_full[[i]]<- csr_dataset(winterdata_names[i])
+}
 
 ```
 
@@ -49,6 +74,48 @@ H3:
 ```{r Clean-Data }
 
 ```
+
+
+# Calculate Number of Freeze Thaw Crossings 
+
+```{r Freeze-Thaw-Crossings }
+
+#T5 mean one dataset
+
+#load data table of one dataset into a dataframe
+scott1<-winterdata_full[[1]]$data
+
+#pull out time and temp info from this dataframe and store in second dataframe
+#create new day and year variables in second dataframe
+scott2<-select(.data = scott1, CSR_TIMESTAMP_BEGIN, CSR_T5)
+scott2<-mutate(scott2, day=yday(CSR_TIMESTAMP_BEGIN), year=year(CSR_TIMESTAMP_BEGIN))
+
+#group data in second data frame by year and day
+#summarise T5 calculating the minimum for each day, store in third dataframe
+scott2 %>%
+  filter(!is.na(CSR_T5)) %>%
+  group_by(year,day) %>%
+  summarise(T5_min=min(CSR_T5), 
+            CSR_TIMESTAMP_BEGIN=mean(CSR_TIMESTAMP_BEGIN)) -> scott3
+
+
+
+# Number of Freeze Thaw Crossings One Dataset
+
+#add sign variable to data frame which computes the sign of each T5 to third dataframe
+scott3<-mutate(scott3, sign=sign(T5_min))
+
+#create a vector that counts the number of times T5 changes sign, assigning the presence of a sign change as TRUE and the lack of a sign change as FALSE
+#this vector cannot be stored in the third dataframe because it #has too few rows
+ftchange<-scott4$sign[-1]!= scott4$sign[-length(signs)]
+
+#sum the sign changes by summing the number of TRUEs stored in the  ftchange vector
+#divide this number by two to return the number of freeze thaw events observed in this dataset
+ft_events<-(sum(ftchange))/2
+
+
+```
+
 
 # Hypothesis 1
 
