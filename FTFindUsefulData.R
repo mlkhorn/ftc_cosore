@@ -217,7 +217,7 @@ not5ay_names
 
 #Are any datasets missing both air temperature and t5 soil temperature?
 
-bothtemp_names<-c()
+bothtempay_names<-c()
 #will contain names of datasets with air and soil 5 cm temperature
 tempay_names<-c()
 #will contain names of datasets that have either air or soil 5 cm temperature
@@ -313,7 +313,6 @@ for(i in 1:runs){
 # 8 datasets in allyeardata_names have data that match our definition of winter
 winterdata_names
 print(winterdata_names)
-
 
 
 

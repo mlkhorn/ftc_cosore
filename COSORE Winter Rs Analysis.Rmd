@@ -80,38 +80,39 @@ for (i in 1:length(winterdata_names)) {
 
 ```{r Freeze-Thaw-Crossings }
 
-#T5 mean one dataset
+ft_event_count<-c()
 
-#load data table of one dataset into a dataframe
-scott1<-winterdata_full[[1]]$data
+for(i in 1:length(winterdata_names)){
+  
+  print(winterdata_names[i])
+  
+  ds<-winterdata_full[[i]]$data
+  
+  ds %>%
+    select(CSR_TIMESTAMP_BEGIN,CSR_T5) %>%
+    mutate(day=yday(CSR_TIMESTAMP_BEGIN),
+           year=year(CSR_TIMESTAMP_BEGIN)) -> ds1
+  
+  ds1 %>%
+      filter(!is.na(CSR_T5)) %>%
+      group_by(year,day) %>%
+      summarise(CSR_TIMESTAMP=mean(CSR_TIMESTAMP_BEGIN),                    
+                T5_min=min(CSR_T5)) -> ds2
+  
+  ds2 %>%
+    mutate(sign=sign(T5_min)) -> ds3
+    
+  ftchange<-ds3$sign[-1]!=ds3$sign[-length(ds3$sign)]
+  
+  ft_number<-(sum(ftchange))/2
+  
+  ft_event_count[i] <- ft_number
+  
+}
 
-#pull out time and temp info from this dataframe and store in second dataframe
-#create new day and year variables in second dataframe
-scott2<-select(.data = scott1, CSR_TIMESTAMP_BEGIN, CSR_T5)
-scott2<-mutate(scott2, day=yday(CSR_TIMESTAMP_BEGIN), year=year(CSR_TIMESTAMP_BEGIN))
+ft_events<-data.frame("dataset"=winterdata_names,
+                     "FT_events"=ft_event_count)
 
-#group data in second data frame by year and day
-#summarise T5 calculating the minimum for each day, store in third dataframe
-scott2 %>%
-  filter(!is.na(CSR_T5)) %>%
-  group_by(year,day) %>%
-  summarise(T5_min=min(CSR_T5), 
-            CSR_TIMESTAMP_BEGIN=mean(CSR_TIMESTAMP_BEGIN)) -> scott3
-
-
-
-# Number of Freeze Thaw Crossings One Dataset
-
-#add sign variable to data frame which computes the sign of each T5 to third dataframe
-scott3<-mutate(scott3, sign=sign(T5_min))
-
-#create a vector that counts the number of times T5 changes sign, assigning the presence of a sign change as TRUE and the lack of a sign change as FALSE
-#this vector cannot be stored in the third dataframe because it #has too few rows
-ftchange<-scott4$sign[-1]!= scott4$sign[-length(signs)]
-
-#sum the sign changes by summing the number of TRUEs stored in the  ftchange vector
-#divide this number by two to return the number of freeze thaw events observed in this dataset
-ft_events<-(sum(ftchange))/2
 
 
 ```
