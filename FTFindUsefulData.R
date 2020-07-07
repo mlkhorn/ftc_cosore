@@ -255,7 +255,7 @@ notempay_names
 # 22 datasets have at least air or t5 temperature data
 tempay_names
 # 0 datasets have both air and t5 soil temperature data
-bothtemp_names
+bothtempay_names
 
 
 
