@@ -12,8 +12,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Overall Science Question
 Question:
-How much does Rs during winter contribute to annual flux?
-Does the number of freeze-thaw events have an effect on the winter contribution?
 
 ## Sub Hypotheses:
 H1:
@@ -24,16 +22,9 @@ H3:
 # Loading Packages
 
 ```{r Load-Packages }
-library(dplyr)
-library(ggplot2)
-library(tidyr)
-library(lubridate)
-library(devtools)
-library(remotes)
-library(cosore)
 
-source("FTFindUsefulData.R")
 ```
+ 
  
 # Functions
  
@@ -48,26 +39,8 @@ source("FTFindUsefulData.R")
 
 # Load Data
 
-winterdata_names holds the names of the 8 datasets that have a full year of data and have a winter period that matches our definition. 
-
-winterdata holds the data tables of all the datasets in winter_datanames
-
-winterdata_full holds all the data of all the datasets in winterdata_names
-
 ```{r Load-data}
 #This is where we would load the data we are going to analyze
-
-winterdata_names
-
-winterdata <- list()
-for (i in 1:length(winterdata_names)) {
-  winterdata[[i]]<- csr_dataset(winterdata_names[i])$data
-}
-
-winterdata_full <- list()
-for (i in 1:length(winterdata_names)) {
-  winterdata_full[[i]]<- csr_dataset(winterdata_names[i])
-}
 
 ```
 
@@ -76,61 +49,6 @@ for (i in 1:length(winterdata_names)) {
 ```{r Clean-Data }
 
 ```
-
-
-# Calculate Number of Freeze Thaw Crossings: 
-
-```{r Freeze-Thaw-Crossings-Per-Year}
-
-results <- list()
-
-for(i in 1:length(winterdata_names)){
-  
-  message("I'm on ", winterdata_names[i]," now")
-  
-  ds<-winterdata_full[[i]]$data
-  ds %>%
-    ungroup() %>%
-    select(CSR_TIMESTAMP_BEGIN,CSR_T5) %>%
-    mutate(day=yday(CSR_TIMESTAMP_BEGIN),
-           year=year(CSR_TIMESTAMP_BEGIN)) -> ds1
-  ds1 %>%
-      filter(!is.na(CSR_T5)) %>%
-      group_by(year,day) %>%
-      summarise(CSR_TIMESTAMP=mean(CSR_TIMESTAMP_BEGIN),                    
-                T5_min=min(CSR_T5)) %>% 
-      ungroup() -> ds2
-  
-  
-  ds2 %>%
-    mutate(s=sign(T5_min)) %>%
-    group_by(year) %>%
-    summarise(ft_number = sum(s[-1] != s[-length(s)]) / 2)->
-    results[[winterdata_names[i]]]
-
-}
-
-ft_results<-bind_rows(results, .id = "dataset")
-
-
-```
-
-# Calculate Annual Rs by Year
-Current def of year is Jan 1 to Dec 31. 
-
-```{r rs-by-year}
-
-```
-
-# Calculate Winter Rs 
-Within calendar year Jan 1 - March 20, Dec 21 - Dec 31  
-
-```{}
-```
-
-
-# Calculate 
-
 
 # Hypothesis 1
 
