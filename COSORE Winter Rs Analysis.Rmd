@@ -6,7 +6,9 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+
 knitr::opts_chunk$set(echo = TRUE)
+
 ```
 
 
@@ -25,6 +27,7 @@ H3:
 # Loading Packages
 
 ```{r Load-Packages }
+
 library(dplyr)
 library(ggplot2)
 library(tidyr)
@@ -40,13 +43,18 @@ library(tibble)
 # Source Data Identification Script
 
 ```{r source-data-id-script}
+
+#This code pulls in data relevant to the desired analysis
+
 source("FTFindUsefulData.R")
+
 ```
 
 
 # Load Data
 
 ```{r Load-data}
+
 #winterdata_names holds the names of the 8 datasets that have a full year of data and have a winter period that matches our definition. 
 
 #winterdata will hold the data tables of all the datasets in winter_datanames
@@ -55,12 +63,12 @@ for (i in 1:length(winterdata_names)) {
   winterdata[[winterdata_names[i]]]<- csr_dataset(winterdata_names[i])$data
 }
 
+
 #convert winterdata from a list to a tibble, name this tibble winterdata_bound
 winterdata_bound <- bind_rows(winterdata, .id="dataset")
 
-#CONTINUE WORKING ON: Because you are now using this tibble instead of the winterdata list, you will need to go back and change the way any looping using the length of winterdata_names as a loop limit is carried out. 
 
-#winterdata_full will hold all the cosore data from all 8 of the datasets that appear in winterdata_names
+#winterdata_full will hold all the COSORE data from all 8 of the datasets that appear in winterdata_names
 winterdata_full <- list()
 for (i in 1:length(winterdata_names)) {
   winterdata_full[[winterdata_names[i]]]<- csr_dataset(winterdata_names[i])
@@ -74,6 +82,8 @@ for (i in 1:length(winterdata_names)) {
 
 ```{r Data-Availability-Visualization}
 
+# This code visualizes the soil 5cm temperature data available
+
 winterdata_bound %>%
   select(dataset, CSR_T5, CSR_TIMESTAMP_BEGIN ) %>%
   ggplot( aes( x = CSR_TIMESTAMP_BEGIN, y = CSR_T5 ) ) +
@@ -82,6 +92,8 @@ winterdata_bound %>%
   facet_wrap(~dataset, scales = "free_x") -> plt3
 
 print(plt3)
+
+# This code visualizes the CO2 flux data available
 
 winterdata_bound %>%
   select(dataset, CSR_FLUX_CO2, CSR_TIMESTAMP_BEGIN ) %>%
@@ -99,17 +111,12 @@ print(plt4)
 
 ```{r Clean-Data}
 
-#convert winterdata from a list to a tibble 
-#name this tibble winterdata_bound
-winterdata_bound <- bind_rows(winterdata, .id="dataset")
-
-
-#Remove co2 flux measurements from winterdata_bound that are negative
+# This code removes co2 flux measurements from winterdata_bound that are negative
 winterdata_bound %>% 
-  filter( sign(CSR_FLUX_CO2) == 1 ) -> winterdata_bound
+  filter( sign(CSR_FLUX_CO2 ) == 1 ) -> winterdata_bound
 
 
-#Cut out incomplete years of CO2 FLUX data that include:
+# This code cuts out the following incomplete years of CO2 flux data:
           #2019 data from scott_wkg 
           #2008 and 2013 data from he
           #2015 data from kaye_lnw
@@ -119,24 +126,39 @@ winterdata_bound %>%
           #2011 data from sanchez-canete
 
 winterdata_bound  %>%
-  mutate( year = year(CSR_TIMESTAMP_BEGIN) , month = month(CSR_TIMESTAMP_BEGIN), day_of_year = yday(CSR_TIMESTAMP_BEGIN) ) %>%
+  mutate( year = year(CSR_TIMESTAMP_BEGIN) , 
+          month = month(CSR_TIMESTAMP_BEGIN), 
+          day_of_year = yday(CSR_TIMESTAMP_BEGIN), 
+          date = date(CSR_TIMESTAMP_BEGIN),
+          T5_signal = sign (CSR_T5)) %>%
   group_by( dataset, year ) %>%
   filter( 12 == length( unique ( month ) ) ) %>% 
   ungroup() -> winterdata_bound
 
+# The variable name T5_signal is used to indicate the sign of T5 because I wanted to avoid confusing myself. 
+# T5_sign is used in a different dataframe 
+
+
 #CHECK LATER ON
-#the problem with this is that it completely cuts out two datasets, 
+# the problem with this is that it completely cuts out two datasets, 
 # possibly go back in an re-incorporate those with gap filling? 
 
 ```
 
 
-# Create a logic vector that tells whether or not a msmt occurs in winter
+# Create a variable using TRUE/FALSE tells that tells whether or not a msmt occurs in winter
+
 ```{r winter-true-false}
 
-#CHECK CALCULATIONS LATER ON
+# This code creates a logic vector that identifies winter days with the value TRUE 
+# All non winter days have the value FALSE
+
 winterdata_bound %>% 
   mutate( winter = ((day_of_year<=79) | (day_of_year>=356 )) ) -> winterdata_bound
+
+# CHECK CALCULATIONS LATER ON
+# I wrote this code having all days before March 21 and after Dec 20 count as winter days
+# Did I get the numbers right? 
 
 ```
 
@@ -163,112 +185,10 @@ winterdata_bound %>%
   
 print(plt4)
 
-#DISCUSS W/ MENTORS : It looks like you are missing quite a bit of T5 data but have good CO2 data for d20200212_KAYE_LNE. Can I gap fill the T5 data? Theres A LOT missing. 
-```
-
-```{r Clean-Data-Visulaization-T5-Min}
-
-winterdata_bound %>%
-  select( dataset, CSR_T5, CSR_TIMESTAMP_BEGIN, year, month, day ) %>% 
-  mutate(date = date(CSR_TIMESTAMP_BEGIN)) %>%
-  group_by(dataset, date) %>% 
-  summarise(minT5 = min(CSR_T5, na.rm=TRUE), minTime = min(CSR_TIMESTAMP_BEGIN, na.rm = TRUE) ) -> plt5_data
-  
-plt5_data %>% 
-  ggplot( aes( x = minTime, y = minT5 ) ) +
-  geom_point() +
-  labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time" ) +
-  facet_wrap(~dataset, scales = "free_x") -> plt5
-
-print(plt5)
-
-#DISCUSS W/ MENTORS : What is going on with d20200212_KAYE_LNE?  
+#DISCUSS W/ MENTORS SOON: It looks like you are missing quite a bit of T5 data but have good CO2 data for d20200212_KAYE_LNE. Should I do something about this? 
 
 ```
 
-
-```{r Clean-Data-Visulaization-T5-Min-With-FTCs-Highlighted}
-
-#STILL IN PROGRESS
-
-
-winterdata_bound %>%
-  select( dataset, CSR_T5, CSR_TIMESTAMP_BEGIN, year, month, day ) %>% 
-  mutate(date = date(CSR_TIMESTAMP_BEGIN)) %>%
-  group_by(dataset, date) %>% 
-  summarise(minT5 = min(CSR_T5, na.rm=TRUE), minTime = min(CSR_TIMESTAMP_BEGIN, na.rm = TRUE) ) -> plt6_data
-  
-plt6_data %>% 
-  mutate(s=sign(minT5)) -> plt6_data 
-
-ft_cross <- c()
-s<- c()
-#s[-1] != s[-length(s)]
-#sign(plt5_data$minT5[-1])!= sign(length(plt5_data$minT5))
-
-#s holds the sign of each minimum temperature as 1 or -1
-s<-sign(plt5_data$minT5)
-#ft_cross will answer the question, did a freeze or thaw event just happen? 
-ft_cross <- s[-1] != s[-length(s)]
-#this doesn't work!!!
-
-#ft_cross is a logic vector
-#it is created by comparing (the sign of) each daily T5 min to the T5 min directly before it
-#FALSE will eventu
-
-plt6_data %>% 
-  ggplot( aes( x = minTime, y = minT5 ) ) +
-  geom_point() +
-  geom_point( )+
-  labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time" ) +
-  facet_wrap(~dataset, scales = "free_x") -> plt6
-
-print(plt6)
-
-# + geom_point(data = new_dataset, aes(x = x_vals, y = y_vals)
-
-```
-
-
-# Calculate Number of Freeze Thaw Crossings in each dataset: 
-
-```{r Freeze-Thaw-Crossings-Per-Year}
-
-
-ft_results <- list()
-
-for(i in 1:length(winterdata_names)){
-  
-  message("I'm on ", winterdata_names[i]," now")
-  
-  ds<-winterdata_full[[i]]$data
-  ds %>%
-    ungroup() %>%
-    select( CSR_TIMESTAMP_BEGIN,CSR_T5) %>%
-    mutate( day=yday(CSR_TIMESTAMP_BEGIN),
-            year=year(CSR_TIMESTAMP_BEGIN) ) -> ds1
-  ds1 %>%
-      filter( ! is.na(CSR_T5) ) %>%
-      group_by( year, day ) %>%
-      summarise( CSR_TIMESTAMP= mean(CSR_TIMESTAMP_BEGIN),                    
-                 T5_min= min(CSR_T5) ) %>% 
-      ungroup() -> ds2
-  
-  
-  ds2 %>%
-    mutate(s= sign(T5_min) ) %>%
-    group_by(year) %>%
-    summarise(ft_number= sum( s[-1] != s[-length(s)] ) / 2)->
-    ft_results[[winterdata_names[i]]]
-
-}
-
-ft_totals<-bind_rows(ft_results, .id = "dataset")
-
-# SOON: Update this code so it gives you the number of freeze thaw cycles in <each year> of <each dataset> that has <clean> data 
-
-
-```
 
 
 # Calculate Annual Rs by Year
@@ -276,18 +196,30 @@ Current definition of year is Jan 1 to Dec 31.
 
 ```{r rs-by-year-fixed}
 
+# This code calculates the annual Rs of each year with clean data in each dataset 
+# The Rs values are stored the anRs variable in the winterdata_annualRs dataframe
+# The Rs values have the unit gC/m2/yr
+
 winterdata_bound %>% 
   group_by(dataset, year) %>% 
-  summarise(avgRs=mean(CSR_FLUX_CO2, na.rm= TRUE)) -> anRs_increment
-  
-anRs_increment %>% 
-  mutate(anRs=avgRs*31.536*12.0107) -> winterdata_annualRs
+  summarise(avgRs=mean(CSR_FLUX_CO2, na.rm= TRUE)) %>% 
+  mutate(anRs=avgRs*31.536*12.0107) -> 
+  winterdata_annualRs
+
+# 31.536 is the conversion factor used to convert the time units from 1/s to 1/yr
+# 12.017 is the molar mass of carbon, it the conversion factor used to convert 
+# the mass units from  mol CO2 to g C
 
 ```
+
 
 # Calculate Winter Rs 
 Within calendar year Jan 1 - March 20, Dec 21 - Dec 31  
 ```{r winter-Rs}
+
+# This code calculates the winter Rs of each year with clean data in each dataset 
+# The Rs values are stored the winter_Rs variable in the winterdata_summary dataframe
+# The Rs values have the unit gC/m2/winter
 
 winterdata_bound %>% 
   filter(winter == TRUE) %>% 
@@ -297,11 +229,29 @@ winterdata_bound %>%
 wRs_increment %>% 
   mutate(winter_Rs=avg_winter_Rs*31.536*12.0107*0.25) -> winterdata_summary
 
+# 0.25 is the conversion factor used to the time units from 1/yr to 1/winter
+
+```
+
+
+# Store Annual Rs and Winter Rs In One Place 
+
+``` {r store-in-one-place}
+
+# This code moves stores the average annual Rs data (umolCO2/m2/s) and the annual Rs data (gC/m2/yr)
+# in the same place as the average winter Rs data (umolCO2/m2/s) and the winter Rs data (gC/m2/yr)
+
+
 winterdata_summary %>% 
   add_column(avg_annual_Rs = winterdata_annualRs$avgRs, 
          annual_Rs = winterdata_annualRs$anRs) -> winterdata_summary
 
+# Now average winter Rs, winter Rs, average annual Rs, and annual Rs are all stored in the dataframe
+# winterdata_summary
+
 ```
+
+
 
 # Calculate Winter Rs Contribution
 ```{r winter-Rs-contribution}
@@ -316,7 +266,10 @@ winterdata_summary %>%
 # Calculate Metadata That May Be Useful For ANOVA Analysis
 ```{r summary-metadata}
 
-#Variables that may cause some of the variation in the contribution of winter Rs to Annual RS include mean annual T5, mean annual SM5, mean winter T5, and mean winter SM5.
+# Variables that may contribute to some of the variation in Winter Rs and winter Rs contribution:
+# mean annual T5, mean annual SM5, mean winter T5, and mean winter SM5.
+
+# All four are calculated below and stored in winterdata_summary
 
 winterdata_bound %>% 
   group_by( dataset, year ) %>% 
@@ -336,17 +289,172 @@ winterdata_summary %>%
 ```
 
 
-# Hypothesis 1
+# Visualize T5min
 
+```{r Clean-Data-Visulaization-T5-Min}
+
+winterdata_bound %>%
+  select( dataset, CSR_T5, CSR_TIMESTAMP_BEGIN, year, month ) %>% 
+  mutate(date = date(CSR_TIMESTAMP_BEGIN)) %>%
+  group_by(dataset, date) %>% 
+  summarise(minT5 = min(CSR_T5, na.rm=TRUE), minTime = min(CSR_TIMESTAMP_BEGIN, na.rm = TRUE), year= year ( min ( CSR_TIMESTAMP_BEGIN ) ) ) %>% 
+  filter(minT5 <= 30 ) -> winterdata_T5mins
+ 
+
+winterdata_T5mins %>% 
+  ggplot( aes( x = minTime, y = minT5 ) ) +
+  geom_point() +
+  labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time" ) +
+  facet_wrap(~dataset, scales = "free_x") -> plt5
+
+print(plt5)
+ 
+winterdata_bound %>%
+  select( dataset, CSR_T5, CSR_TIMESTAMP_BEGIN, year, month ) %>% 
+  mutate(date = date(CSR_TIMESTAMP_BEGIN)) %>%
+  group_by(dataset, date) %>% 
+  summarise(minT5 = min(CSR_T5, na.rm=TRUE), minTime = min(CSR_TIMESTAMP_BEGIN, na.rm = TRUE), year= year ( min ( CSR_TIMESTAMP_BEGIN ) ) ) -> 
+  wo_removal
+
+wo_removal %>% 
+  ggplot( aes( x = minTime, y = minT5 ) ) +
+  geom_point() +
+  labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time w/o Removal" ) +
+  facet_wrap(~dataset, scales = "free_x") -> plt7
+
+print(plt7)
+
+
+#DISCUSS W/ MENTORS : What is going on with d20200212_KAYE_LNE?  
+
+```
+
+
+# Visulize Daily FT Crossings Using T5min 
+
+```{r Clean-Data-Visulaization-T5-Min-With-FTCs-Highlighted}
+
+
+winterdata_T5mins %>% 
+  mutate( T5_sign = sign( minT5 ) ) %>% 
+  group_by( dataset, year ) %>% 
+  mutate( begin_event = c( T5_sign[-1] != T5_sign[-length(T5_sign)], FALSE ),
+          end_event = c( FALSE, T5_sign[-1] != T5_sign[-length(T5_sign)] ) ) -> winterdata_T5mins
+
+winterdata_T5mins %>% 
+  filter( begin_event == TRUE ) -> T5mins_begin
+
+winterdata_T5mins %>% 
+  filter( end_event == TRUE ) -> T5mins_end
+
+winterdata_T5mins %>% 
+  ggplot( aes( x = minTime, y = minT5 ) ) +
+  geom_point() +
+  geom_point( data = T5mins_begin, aes( x = minTime, y = minT5), color= "green"  )+
+  geom_point( data = T5mins_end, aes( x = minTime , y = minT5), color= "blue" ) +
+  labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time" ) +
+  facet_wrap(~dataset, scales = "free_x") -> plt9
+
+print(plt9)
+
+```
+
+
+# Calculate Number of Freeze Thaw Crossings in each dataset: 
+
+```{r Freeze-Thaw-Crossings-Per-Year}
+
+# CHECK: helper is clumsy, can I make this less clumsy somehow? 
+
+
+
+# 30 MINUTE TIMESCALE
+
+# This code counts the number of freeze thaw boundary crosses that occur at a 30 minute time scale
+# The number of thirty minute crosses in each dataset is eventually stored in total_ftcrosses
+# The number of micro freeze thaw events, ie freeze thaw events at a 30 minute timescale, is stored in ftevent_microcount 
+   # ftenvent_microcount is calculated by dividing total_ftcrosses by two
+
+winterdata_bound %>% 
+  filter(signal_change_after == TRUE ) %>% 
+  group_by(dataset, year) %>%  
+  summarise( signal_change_count = sum ( signal_change_after ) ) -> signchange_totalsummary
+
+ helper0 <-  c( signchange_totalsummary$signal_change_count[1], 0, c(signchange_totalsummary$signal_change_count[2-14]))
+ helper2 <- c(helper0/2)
+
+
+
+# DAILY TIMESCALE
+
+# This code counts the number of freeze thaw boundary crosses that occur at a daily time scale then divides this number by two to determine the freeze thaw event count for each year of clean data in each dataset
+# freeze thaw event count is stored in the ftevent_count variable
+
+winterdata_T5mins %>% 
+  filter( begin_event == TRUE ) %>% 
+  group_by(dataset, year) %>%  
+  summarise( sign_change_count = sum ( begin_event ) ) -> signchange_briefsummary
+  
+signchange_briefsummary %>% 
+  mutate( fte_count = sign_change_count / 2 ) -> signchange_briefsummary 
+
+helper <- c( signchange_briefsummary$fte_count[1], 0, c(signchange_briefsummary$fte_count[2-14]))
+
+
+
+
+# This code stores the variables calculated above in  winterdata_summary
+
+winterdata_summary %>% 
+  add_column ( total_ftcrosses = helper0,
+               ftevent_microcount = helper2,
+               ftevent_count = helper ) -> winterdata_summary
+
+```
+
+
+
+
+
+# Hypothesis 1
+Relationship between fte count and winter Rs 
 ```{r H-1}
 
+# This code plots winter Rs against freeze thaw event count
+
+winterdata_summary %>% 
+  ggplot(aes(x = ftevent_count, y = winter_Rs )) + 
+  geom_point() +
+    labs(x="Freeze Thaw Event Count",
+       y="Winter Rs (gC/m2/yr)",
+       title="Relationship Between Freeze Thaw Event Count and Winter Rs" ) -> 
+  plt8
+
+print(plt8)
+
 ```
+
+
+
 
 # Hypothesis 2
-
+Relationship between fte count and winter Rs contribution
 ```{r H-2}
 
+# This code plots winter Rs contribution against freeze thaw event count
+
+winterdata_summary %>% 
+  ggplot(aes(x = ftevent_count, y = winter_Rs_percent )) + 
+  geom_point() +
+  labs(x="Freeze Thaw Event Count",
+       y="Winter Rs Contribution (%)",
+       title="Relationship Between Freeze Thaw Event Count and Winter Rs Contribution" ) ->
+  plt7
+
+print(plt7)
+
 ```
+
 
 # Hypothesis 3
 
