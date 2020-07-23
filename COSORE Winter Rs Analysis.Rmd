@@ -520,8 +520,9 @@ winterdata_summary %>%
   geom_point() +
     labs(x="Freeze Thaw Event Count",
        y="Winter Rs (gC/m2/yr)",
-       title="Relationship Between Freeze Thaw Event Count and Winter Rs" ) -> 
-  plt8
+       title="Relationship Between Freeze Thaw Event Count and Winter Rs" )+
+    geom_smooth()+
+ theme_minimal()-> plt8
 
 print(plt8)
 ```
@@ -565,8 +566,9 @@ winterdata_summary %>%
   geom_point() +
   labs(x="Freeze Thaw Event Count",
        y="Winter Rs Contribution (%)",
-       title="Relationship Between Freeze Thaw Event Count and Winter Rs Contribution" ) ->
-  plt7
+       title="Relationship Between Freeze Thaw Event Count and Winter Rs Contribution" ) +
+  geom_smooth() +
+ theme_minimal()-> plt7
 
 print(plt7)
 
@@ -611,15 +613,7 @@ plot( h2_betamodel, which = 1:4)
 par( mfrow = c(1,1) )
 
 
-#model diagnostics
 
-car::Anova(h2_betamodel, type = "III")
-
-data("GasolineYield", package = "betareg")
-gy <- betareg(yield ~ gravity + pressure + temp10 + temp, data = GasolineYield)
-par(mfrow = c(3, 2))
-plot(gy, which = 1:6)
-par(mfrow = c(1, 1))
 
 ```
 

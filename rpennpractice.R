@@ -50,7 +50,7 @@ gapminder %>%
   select(year, lifeExp) %>%
   ggplot(aes(x=year,y=lifeExp)) +
   geom_point(color="blue")+
-  xlab("Time (years)")+
+  xlab("Time (years)" )+
   ylab("Mean Life Expectancy (years)")+
   ggtitle("Change in Chinese Life Expectancy Over Time")+
   theme_minimal()
