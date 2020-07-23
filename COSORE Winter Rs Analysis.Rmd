@@ -405,9 +405,10 @@ winterdata_T5mins %>%
 winterdata_T5mins %>% 
   ggplot( aes( x = minTime, y = minT5 ) ) +
   geom_point() +
-  geom_point( data = T5mins_begin, aes( x = minTime, y = minT5), color= "light green"  ) +
+  geom_point( data = filter(winterdata_T5mins, begin_event == TRUE ), aes( x = minTime, y = minT5), color= "light green"  ) +
   labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time" ) +
-  facet_wrap(~dataset, scales = "free_x") -> plt10
+  facet_wrap(~dataset, scales = "free_x", ncol = 2) + 
+  theme_minimal()-> plt10
 
  print(plt10)
 
@@ -645,9 +646,14 @@ winterdata_summary %>%
 
 kable( winterdata_Rscloselook, caption = "Annual & Winter Rs Values")
 
-
-
-
+# stacked bar chart 
+winterdata_Rscloselook %>%
+  pivot_longer(winter_Rs:annual_Rs, names_to = "Contribution", values_to = "Rs") %>%
+  ggplot(aes(x = year, y = Rs, fill = Contribution)) +
+  facet_wrap(~dataset, scales = "free") +
+  geom_bar(stat = "identity") +
+  scale_x_continuous(breaks = 2009:2018) +
+  theme_minimal()
 
 ```
 
