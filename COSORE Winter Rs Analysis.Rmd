@@ -36,6 +36,12 @@ library(devtools)
 library(remotes)
 library(cosore)
 library(tibble)
+library(car)
+library(betareg)
+library(sp)
+library(leaflet)
+library(knitr)
+
 
 ```
 
@@ -44,7 +50,9 @@ library(tibble)
 
 ```{r source-data-id-script}
 
-#This code pulls in data relevant to the desired analysis
+# This code pulls in datasets from COSORE that:
+ # experience winter
+ # have CO2 flux measurements, T5 measurements, and one or more years of data with at least 15 days of data per month
 
 source("FTFindUsefulData.R")
 
@@ -335,27 +343,75 @@ print(plt7)
 ```{r Clean-Data-Visulaization-T5-Min-With-FTCs-Highlighted}
 
 
+
+
+
+#this code adds needed begin_event and end_event varibles
+
+#begin_event is used in plot 10 to mark each day scale fte
+
 winterdata_T5mins %>% 
   mutate( T5_sign = sign( minT5 ) ) %>% 
   group_by( dataset, year ) %>% 
   mutate( begin_event = c( T5_sign[-1] != T5_sign[-length(T5_sign)], FALSE ),
           end_event = c( FALSE, T5_sign[-1] != T5_sign[-length(T5_sign)] ) ) -> winterdata_T5mins
 
-winterdata_T5mins %>% 
-  filter( begin_event == TRUE ) -> T5mins_begin
 
-winterdata_T5mins %>% 
-  filter( end_event == TRUE ) -> T5mins_end
+
+
+
+# This code plots like below but displays the beginning AND end of each fte
+
+# winterdata_T5mins %>% 
+#  filter( begin_event == TRUE ) -> T5mins_begin
+
+# winterdata_T5mins %>% 
+#  filter( end_event == TRUE ) -> T5mins_end
+
+# winterdata_T5mins %>% 
+#  ggplot( aes( x = minTime, y = minT5 ) ) +
+#  geom_point() +
+#  geom_point( data = T5mins_begin, aes( x = minTime, y = minT5), color= "green"  )+
+#  geom_point( data = T5mins_end, aes( x = minTime , y = minT5), color= "blue" ) +
+#  labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time" ) +
+#  facet_wrap(~dataset, scales = "free_x") -> plt9
+
+# print(plt9)
+
+
+
+
+
+#commented out bc code didn't work the way I wanted it too
+
+# winterdata_T5mins %>% 
+#  filter( begin_event == TRUE ) -> T5mins_begin
+
+# winterdata_T5mins %>% 
+#  filter( end_event == TRUE ) -> T5mins_end
+
+# fte_meantime <- c()
+# for( i in 1:length(T5mins_begin$minTime) ) {
+#  fte_meantime[i] <- mean( c(T5mins_begin$minTime[i], T5mins_end$minTime[i]) )
+# }
+
+
+
+
+
+
+# This code creates a temperature figure that marks each fte event with a single light green point
 
 winterdata_T5mins %>% 
   ggplot( aes( x = minTime, y = minT5 ) ) +
   geom_point() +
-  geom_point( data = T5mins_begin, aes( x = minTime, y = minT5), color= "green"  )+
-  geom_point( data = T5mins_end, aes( x = minTime , y = minT5), color= "blue" ) +
+  geom_point( data = T5mins_begin, aes( x = minTime, y = minT5), color= "light green"  ) +
   labs( x = "Time (Years)", y = "Minimum Daily Soil Temperature" , title = "Change in Minimum Soil Temperature Over Time" ) +
-  facet_wrap(~dataset, scales = "free_x") -> plt9
+  facet_wrap(~dataset, scales = "free_x") -> plt10
 
-print(plt9)
+ print(plt10)
+
+
 
 ```
 
@@ -406,12 +462,49 @@ helper <- c( signchange_briefsummary$fte_count[1], 0, c(signchange_briefsummary$
 # This code stores the variables calculated above in  winterdata_summary
 
 winterdata_summary %>% 
-  add_column ( total_ftcrosses = helper0,
-               ftevent_microcount = helper2,
-               ftevent_count = helper ) -> winterdata_summary
+  add_column ( total_ftcrosses = helper0, #number of sign changes at the 30 minute scale
+               ftevent_microcount = helper2, # number of 30 min scale ftes 
+               ftevent_count = helper #number of day scale ftes, day scale ftes are the focus of the paper 
+               ) -> winterdata_summary
 
 ```
 
+# Add IGBP type to winterdata_summary
+
+```{r IGBP-pull-from-cosore }
+
+# d20190617_SCOTT_WKG 
+# d20200108_HE
+# d20200212_KAYE_LNE
+# d20200212_KAYE_LNW 
+# d20200417_ARAIN_TP39 
+# d20200423_SANCHEZ-CANETE
+
+#this code pulls out the IGBP of all the sites above an inserts it into winterdata_summary
+
+site_description <- csr_database()
+
+winterdata_cleannames <- winterdata_summary$dataset
+
+IGBP_quickhelp <- c()
+
+
+for( i in 1:length(winterdata_cleannames)){ 
+  
+  #return the in site_description index of the dataset name which is stored in winterdata_cleannames index i
+
+  robinhood <- which( site_description$CSR_DATASET == winterdata_cleannames[i] )
+  
+  IGBP_quickhelp[i] <- site_description$CSR_IGBP[robinhood]
+
+}
+
+
+winterdata_summary %>% 
+  add_column( IGBP = IGBP_quickhelp ) -> winterdata_summary
+
+
+```
 
 
 
@@ -431,8 +524,32 @@ winterdata_summary %>%
   plt8
 
 print(plt8)
+```
+
+
+
+
+
+
+# Hypothesis 1 Linear Model
+Relationship between fte count and winter Rs 
+```{r linear-model-h1}
+
+
+# model and model diagnostics
+
+h1_model <- lm( winter_Rs ~ mean_annual_T5 + mean_annual_SM5 + IGBP + ftevent_count, 
+                        data = winterdata_summary)
+
+
+plot( h1_model )
+
+car::Anova(h1_model, type = "III")
 
 ```
+
+
+
 
 
 
@@ -456,8 +573,170 @@ print(plt7)
 ```
 
 
-# Hypothesis 3
 
-```{r H-3}
+
+
+
+# Hypothesis 2 Linear Model
+Relationship between fte count and winter Rs contribution
+```{r linear-model-h2}
+
+#model results, but for H2 we'll use a more appropriate beta model
+
+h2_model <- lm( winter_Rs_percent ~ mean_annual_T5 + mean_annual_SM5 + IGBP +  ftevent_count, 
+                data = winterdata_summary)
+
+plot( h2_model )
+
+car::Anova(h2_model, type = "III")
 
 ```
+
+
+
+
+
+
+# Hypothesis 2 Beta Model
+Relationship between fte count and winter Rs contribution
+```{r beta-model-h2}
+
+#model results
+
+h2_betamodel <- betareg( c(winter_Rs_percent/100) ~ mean_annual_T5 + mean_annual_SM5 + IGBP +  ftevent_count, 
+                        data = winterdata_summary  )
+
+par( mfrow = c(2,2))
+plot( h2_betamodel, which = 1:4)
+par( mfrow = c(1,1) )
+
+
+#model diagnostics
+
+car::Anova(h2_betamodel, type = "III")
+
+data("GasolineYield", package = "betareg")
+gy <- betareg(yield ~ gravity + pressure + temp10 + temp, data = GasolineYield)
+par(mfrow = c(3, 2))
+plot(gy, which = 1:6)
+par(mfrow = c(1, 1))
+
+```
+
+
+
+# Winter Rs Bar Plot
+
+```{r Annual-Rs-bar}
+
+# This does not work
+
+winterdata_summary %>% 
+  mutate( dataset_year = dataset + as.character(year) ) 
+
+
+winterdata_summary %>% 
+  ggplot(aes(x = year , y = annual_Rs )) +
+  geom_col() -> plt11
+  
+
+print(plt11)
+
+
+
+# info in table first 
+winterdata_summary %>% 
+  select(dataset, year, winter_Rs, annual_Rs)  -> winterdata_Rscloselook
+
+
+kable( winterdata_Rscloselook, caption = "Annual & Winter Rs Values")
+
+
+
+
+
+```
+
+
+
+# Site Locations Figure
+
+```{r site-locations-figure}
+
+site_description <- csr_database()
+winterdata_cleannames <- winterdata_summary$dataset
+lat_quickhelp <- c()
+long_quickhelp <- c()
+
+for( i in 1:length(winterdata_cleannames)){ 
+  
+  #return the in site_description index of the dataset name which is stored in winterdata_cleannames index i
+
+  storage1 <- which( site_description$CSR_DATASET == winterdata_cleannames[i] )
+  
+  #store the latitude of this dataset in lat_quickhelp
+  
+  lat_quickhelp[i] <- site_description$CSR_LATITUDE[storage1]
+
+}
+
+for( i in 1:length(winterdata_cleannames)){ 
+  
+  #return the in site_description index of the dataset name which is stored in winterdata_cleannames index i
+
+  storage2 <- which( site_description$CSR_DATASET == winterdata_cleannames[i] )
+  
+  long_quickhelp[i] <- site_description$CSR_LONGITUDE[storage2]
+
+}
+
+winterdata_summary %>% 
+  add_column( Lat = lat_quickhelp, 
+              Long = long_quickhelp ) -> winterdata_summary
+
+winterdata_summary %>% 
+  select(dataset, IGBP, Lat, Long) %>% 
+  distinct( Lat, Long )-> winterdata_location
+
+
+coordinates(winterdata_location) <- ~Long + Lat
+lflt <- addMarkers(leaflet(winterdata_location), label = winterdata_location$dataset)
+addTiles(lflt)
+
+
+
+```
+  
+
+
+# Average Freeze Thaw Events Per Year
+
+
+```{r fte-per-year-average }
+
+avg_ftefreq <- mean(winterdata_summary$ftevent_count) 
+
+print(avg_ftefreq)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
