@@ -11,8 +11,6 @@ library(devtools)
 library(remotes)
 library(cosore)
 
-
-
 # STEP ONE   #############
 
 # Objective ####
