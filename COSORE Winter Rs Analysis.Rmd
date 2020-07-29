@@ -427,18 +427,20 @@ winterdata_T5mins %>%
 
 # 30 MINUTE TIMESCALE
 
+# this code stopped working but I don't know why
+
 # This code counts the number of freeze thaw boundary crosses that occur at a 30 minute time scale
 # The number of thirty minute crosses in each dataset is eventually stored in total_ftcrosses
 # The number of micro freeze thaw events, ie freeze thaw events at a 30 minute timescale, is stored in ftevent_microcount 
    # ftenvent_microcount is calculated by dividing total_ftcrosses by two
 
-winterdata_bound %>% 
-  filter(signal_change_after == TRUE ) %>% 
-  group_by(dataset, year) %>%  
-  summarise( signal_change_count = sum ( signal_change_after ) ) -> signchange_totalsummary
+#winterdata_bound %>% 
+#  filter(signal_change_after == TRUE ) %>% 
+#  group_by(dataset, year) %>%  
+#  summarise( signal_change_count = sum ( signal_change_after ) ) -> signchange_totalsummary
 
- helper0 <-  c( signchange_totalsummary$signal_change_count[1], 0, c(signchange_totalsummary$signal_change_count[2-14]))
- helper2 <- c(helper0/2)
+# helper0 <-  c( signchange_totalsummary$signal_change_count[1], 0, c(signchange_totalsummary$signal_change_count[2-14]))
+# helper2 <- c(helper0/2)
 
 
 
@@ -522,7 +524,7 @@ winterdata_summary %>%
     labs(x="Freeze Thaw Event Count",
        y="Winter Rs (gC/m2/yr)",
        title="Relationship Between Freeze Thaw Event Count and Winter Rs" )+
-    geom_smooth()+
+    geom_smooth(method="lm")+
  theme_minimal()-> plt8
 
 print(plt8)
@@ -568,7 +570,7 @@ winterdata_summary %>%
   labs(x="Freeze Thaw Event Count",
        y="Winter Rs Contribution (%)",
        title="Relationship Between Freeze Thaw Event Count and Winter Rs Contribution" ) +
-  geom_smooth() +
+  geom_smooth(method="lm") +
  theme_minimal()-> plt7
 
 print(plt7)
@@ -626,8 +628,8 @@ par( mfrow = c(1,1) )
 
 # This does not work
 
-winterdata_summary %>% 
-  mutate( dataset_year = dataset + as.character(year) ) 
+#winterdata_summary %>% 
+#  mutate( dataset_year = dataset + as.character(year) ) 
 
 
 winterdata_summary %>% 
@@ -657,11 +659,8 @@ winterdata_Rscloselook %>%
 
 ```
 
-
-
-# Site Locations Figure
-
-```{r site-locations-figure}
+# Storing Latitude and Longitude in winterdata_summary
+```{r site-lat-long}
 
 site_description <- csr_database()
 winterdata_cleannames <- winterdata_summary$dataset
@@ -694,6 +693,15 @@ winterdata_summary %>%
   add_column( Lat = lat_quickhelp, 
               Long = long_quickhelp ) -> winterdata_summary
 
+
+```
+
+
+
+# Site Locations Figure
+
+```{r site-locations-figure}
+
 winterdata_summary %>% 
   select(dataset, IGBP, Lat, Long) %>% 
   distinct( Lat, Long )-> winterdata_location
@@ -722,10 +730,54 @@ print(avg_ftefreq)
 ```
 
 
+# Create a New Column for Your New Bar Graph
+```{r combine-year-dataset-name}
+
+winterdata_summary %>% 
+  mutate( dataset_abrev = substr(dataset, 11, nchar(dataset) )) %>% 
+  mutate( col_abrev = paste( year, dataset_abrev)) -> winterdata_summary
+
+```
 
 
+# Bar Graph With All Summary Data
+```{r bar-graph-with-all-data}
+
+winterdata_summary %>% 
+  ggplot( aes ( x = col_abrev, y = annual_Rs, fill = IGBP)) +
+  geom_bar( stat= "identity" ) + 
+  theme_minimal() +
+  labs(x = "Dataset",
+       y = "Annual Soil Respiration (gC/m2/yr)",
+       title = "Annual Soil Respiration"  ) +
+  theme(axis.text.x = element_text( angle = 60, hjust = 1) ) 
+  
+  
 
 
+winterdata_summary %>% 
+  ggplot( aes ( x = col_abrev, y = winter_Rs, fill = IGBP)) +
+  geom_bar( stat= "identity" ) + 
+  theme_minimal() +
+  labs(x = "Dataset",
+       y = "Winter Soil Respiration (gC/m2/winter)",
+       title = "Winter Soil Respiration"  ) +
+  theme(axis.text.x = element_text( angle = 60, hjust = 1) ) 
+  
+
+
+winterdata_summary %>% 
+  ggplot( aes ( x = col_abrev, y = winter_Rs_contrib, fill = IGBP)) +
+  geom_bar( stat= "identity" ) + 
+  theme_minimal() +
+  labs(x = "Dataset",
+       y = "Winter Contribution",
+       title = "Winter Contribution"  ) +
+  theme(axis.text.x = element_text( angle = 60, hjust = 1) ) 
+  
+
+
+```
 
 
 
